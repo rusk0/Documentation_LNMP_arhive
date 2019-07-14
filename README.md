@@ -35,12 +35,10 @@ Lets Encrypt сертификат.
 SSL сертификат от Lets Encrypt. 
 
 __Конфигурацията е извършена по следния начин :
-[GitWeb](https://github.com/rusk0/Documentation/blob/master/2801201903)
-, като виждаме необходимост да подредим по-добре нещата.__
+[GitWeb](https://github.com/rusk0/Documentation/blob/master/2801201903-easy)
+
 
 ## Task 2801201903: ##
-Вече имаш сървър с не-малко услуги, както е описано в първото задание трябва да имаш и Change Log. Сега е момента да започнеш да водиш документация за свършената работа, която да се записва в Git хранилище. 
-Oтделен проект в Git  Documentation 
+https://github.com/rusk0/Documentation
 
-__(пропуснато, създадено като branch) Редактирай коректно.__
 
