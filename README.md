@@ -17,11 +17,8 @@ Lets Encrypt сертификат.
  да няма уеб сървър на http порт, а само на https порта.
 лимит за не повече от 100 едновременни отворени ресурса т.е. картинки, css, js и други от един IP адрес.
 
-**За целта създаваме proxy_pass (CORS не е необходим, тъй като браузъра не знае за static сървъра) или rewrite(CORS е необходим, тъй като браузъра знае за втория сървър) директива за следните файлове:**
+**За целта създаваме proxy_pass (CORS не е необходим, тъй като браузъра не знае за static сървъра) или rewrite(CORS е необходим, тъй като браузъра знае за втория сървър) директива за статичните файлове.**
 
-⋅⋅*avi|bin|bmp|dmg|doc|docx|dpkg|exe|flv|gif|htm|ico|ics|img|jpeg|jpg|m2a|m2v|mov|mp3|mp4|mpeg|mpg|msi|pdf|pkg|png|ppt|pptx|ps|rar|rss|rtf|swf|tif|tiff|txt|wmv|xhtml|xls|xml|zip ⋅⋅* 
-
-**и посочваме static сървъра ни като източнкик.
 Стъпките за залагане на сертификата, конфигуриране на автоматично подновяване , rate лимит към nginx :
 [LE+Nginx conf](https://github.com/rusk0/Documentation/blob/master/2801201901) **
 
@@ -30,10 +27,7 @@ Lets Encrypt сертификат.
 
 
 ## Task 2801201902: ##
-Инсталиране на git server, проект WordPress потребител с SSH ключ  
-Съдържанието на проекта ще бъде твоят WordPress и всички бъдещи промени, които ще правиш по самото приложение ще записваш в git проекта. 
-SSL сертификат от Lets Encrypt. 
-
+Инсталиране на git server, проект WordPress: 
 __Конфигурацията е извършена по следния начин :
 [GitWeb](https://github.com/rusk0/Documentation/blob/master/2801201903-easy)
 
