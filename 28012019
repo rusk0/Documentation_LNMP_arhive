@@ -21,7 +21,7 @@ else
 echo "Hello root !"
 fi
 
-
+#########################################################START NGINX INSTALL AND CONFIGURATION#########################################################
 ## **Updating system, installing packages required for Nginx**
 yum install -y epel-release
 yum install update -y &&  yum install upgrade -y
@@ -243,10 +243,11 @@ systemctl enable nginx.service
 sed -e 's/SELINUX=enforcing/SELINUX=disabled/g' -i /etc/selinux/config
 #Selinux troubleshooter : yum  install setroubleshoot
 #cat /var/log/audit/audit.log | grep nginx | grep denied | audit2allow -M mynginx
+#########################################################END NGINX INSTALL AND CONFIGURATION#########################################################
 
 
+#########################################################START PHP72-FPM INSTALL AND CONFIGURATION#########################################################
 
-##################PHP##################
 ### **We can use the yum repo for a quick php-fpm setup: **
 yum install yum-utils -y
 yum install http://rpms.remirepo.net/enterprise/remi-release-7.rpm -y
@@ -255,9 +256,14 @@ yum update -y
 yum install php72  php72-php-fpm php72-php-gd php72-php-json php72-php-mbstring php72-php-mysqlnd php72-php-xml php72-php-xmlrpc php72-php-opcach -y
 sed -e 's/user = apache/user = nobody/g' -e 's/group = apache/group = nobody/g' -e 's/listen = 127.0.0.1:9000/listen = \/var\/run\/php72-fpm.sock/g' -i  /etc/opt/remi/php72/php-fpm.d/www.conf
 sed -e 's/;listen.owner = nobody/listen.owner = nobody/g' -e 's/;listen.group = nobody/listen.owner = nobody/g' -i /etc/opt/remi/php72/php-fpm.d/www.conf
+systemctl enable php72-php-fpm
+service php72-php-fpm restart
+echo "<php phpinfo(); ?>" >> /var/www/html/public_html/$domain.tld/i.php
+#########################################################END PHP72-FPM INSTALL AND CONFIGURATION#########################################################
 
 
-#################MYSQL#####################
+#########################################################START MARIADB INSTALL AND CONFIGURATION#########################################################
+
 ### **Install MariaDB 10.0.3 from yum repos:**
 cat <<\EOF > /etc/yum.repos.d/mariadb.repo
 [mariadb]
@@ -285,9 +291,10 @@ GRANT ALL PRIVILEGES ON $database_wp.* TO '$domain'@'localhost' IDENTIFIED BY PA
 FLUSH PRIVILEGES;
 EOF
 service mysql restart
+#########################################################END MARIADB INSTALL AND CONFIGURATION#########################################################
 
+#########################################################START WORDPRESS INSTALL AND CONFIGURATION#########################################################
 
-#####################################WORPDRESS#########################
 cd /downloads
 wget https://wordpress.org/latest.tar.gz
 tar -xvzf latest.tar.gz
@@ -298,7 +305,7 @@ sed -e 's/username_here/$domain/g' -e 's/password_here/$secret/g' -e 's/database
 mv /var/www/html/public_html/$domain.tld/wp-config-sample.php /var/www/html/public_html/$domain.tld/wp-config.php
 
 ### ** Uncomment here if a seperate user named "$user" is required (perhaps nginx), otherwise set ownership to nobody **
-chown -R nobody:  /var/www
+#chown -R nobody:  /var/www
 
 #useradd -G nobody $user  
 # (consider using setfacl getfacl)
@@ -307,10 +314,9 @@ chown -R nobody:  /var/www
 #chown -R $user: /var/www/html/public_html/$domain.tld/*
 #chown -R $user:nobody /var/www/html/public_html/$domain.tld
 
-systemctl enable php72-php-fpm
+#########################################################END WORDPRESS INSTALL AND CONFIGURATION#########################################################
 
-service php72-php-fpm restart
-echo "<php phpinfo(); ?>" >> /var/www/html/public_html/$domain.tld/i.php
+
 
 ### **Fictional backup server for data, for example sql dump files:**
 wget backup.server.com/$database_wp.sql -O $database_wp.sql
