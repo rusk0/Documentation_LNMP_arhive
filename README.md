@@ -23,10 +23,10 @@ Lets Encrypt сертификат.
 
 **и посочваме static сървъра ни като източнкик.
 Стъпките за залагане на сертификата, конфигуриране на автоматично подновяване , rate лимит към nginx :
-[LE+Nginx conf](https://github.com/rusk0/myfirststack/blob/Documentation/2801201901) **
+[LE+Nginx conf](https://github.com/rusk0/Documentation/blob/master/2801201901) **
 
 
-**Необходимо е да позволим зареждането на ресурси от друг източник, както и да конфигурираме надеждно синхронизиране между двата сървъра. [CORS+SYNC](https://github.com/rusk0/myfirststack/blob/Documentation/2801201902) - Тук можем да намерим информация за Cross Origin хедърите, както и как ще става синхронизацията между основния и static сървъра. **
+**Необходимо е да позволим зареждането на ресурси от друг източник, както и да конфигурираме надеждно синхронизиране между двата сървъра. [CORS+SYNC](https://github.com/rusk0/Documentation/blob/master/2801201902) - Тук можем да намерим информация за Cross Origin хедърите, както и как ще става синхронизацията между основния и static сървъра. **
 
 
 ## Task 2801201902: ##
@@ -35,7 +35,7 @@ Lets Encrypt сертификат.
 SSL сертификат от Lets Encrypt. 
 
 __Конфигурацията е извършена по следния начин :
-[GitWeb](https://github.com/rusk0/myfirststack/blob/Documentation/2801201903)
+[GitWeb](https://github.com/rusk0/Documentation/blob/master/2801201903)
 , като виждаме необходимост да подредим по-добре нещата.__
 
 ## Task 2801201903: ##
