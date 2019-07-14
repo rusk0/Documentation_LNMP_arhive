@@ -1,3 +1,4 @@
+
 ## Task 28012019: ##
 
 Инсталиране на WordPress 5.0.3 върху CentOS 7 сървър, със следните изисквания:
@@ -26,12 +27,14 @@ Lets Encrypt сертификат.
 
 
 ## Task 2801201902: ##
-Инсталиране на git server, проект WordPress: 
-__Конфигурацията е извършена по следния начин :
+Инсталиране на git server, проект WordPress.
+
+## Конфигурацията е извършена по следния начин :
 [GitWeb](https://github.com/rusk0/Documentation/blob/master/2801201903-easy)
 
 
 ## Task 2801201903: ##
 https://github.com/rusk0/Documentation
+
 
 
