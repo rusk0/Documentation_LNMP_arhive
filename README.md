@@ -7,7 +7,7 @@
 - Без SSL.
 
 __За целта използваме базов deploy scirpt :__
-[STACK](https://github.com/rusk0/myfirststack/blob/Documentation/28012019)
+[STACK](https://github.com/rusk0/Documentation/blob/master/28012019)
 
 
 ## Task 2801201901: ##
