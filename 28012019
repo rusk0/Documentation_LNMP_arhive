@@ -1,0 +1,325 @@
+#!/bin/bash
+
+
+### **Adjust the following variables with sed accordingly:**
+##$domain = MYSQL user for the new web project
+##$domain.tld = F.Q.D.N
+##$database = MYSQL database
+##$user = Linux user
+##$secret = password for current project
+##$hashedsecret = mysql user password need to be provided hashed
+echo "                  Simple Nginx PhP-FPM MariaDB Stack Deply Script ..."
+
+sleep 5
+
+## **This script needs to be executed by root**
+cd
+if [ ${UID} -ne 0 ]
+then
+echo "Run this script as root!" && exit 0
+else
+echo "Hello root !"
+fi
+
+
+## **Updating system, installing packages required for Nginx**
+yum install -y epel-release
+yum install update -y &&  yum install upgrade -y
+yum groupinstall -y 'Development Tools'
+yum install -y perl perl-devel perl-ExtUtils-Embed libxslt libxslt-devel libxml2 libxml2-devel gd gd-devel GeoI$
+yum install wget nano -y
+
+### **Some optional requirements, which we have skipped. **
+# yum search libatomic
+#wget https://github.com/libgd/libgd/releases/download/gd-2.2.5/libgd-2.2.5.tar.gz
+#https://dev.maxmind.com/geoip/
+# ldconfig -p | grep -i Libxml2
+#ldconfig -p | grep -i libxslt
+
+### ** Nginx requires specific versions of these libraries when compiling from source.**
+#Even if you have the required libraries we still need to download the right versions.
+echo "Checking for mandatory dependencies..."
+if [[ `ldconfig -p | grep -i 'openssl\|libjpeg\|gcc\|pcre'` -le 10 ]]
+then echo "Missing Dependencies,they will be installed manually ."
+else echo "OK, but nginx requires specific versions of packages when compiling it. They will be installed manually."
+fi
+
+### **Starting Nginx V 1.15.8 compile from source**
+## Guide: https://www.vultr.com/docs/how-to-compile-nginx-from-source-on-centos-7
+mkdir downloads
+cd downloads
+wget https://nginx.org/download/nginx-1.15.8.tar.gz -O nginx.tar.gz
+tar -xzf nginx.tar.gz
+mv nginx-1.15.8 nginx
+
+wget ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre/pcre-8.42.tar.gz
+tar -xzf pcre-8.42.tar.gz
+## **We can use Nginx to install pcre, so we skip this part:**
+#cd pcre-8.42
+#./configure
+#make
+#make install
+#cd /downloads
+
+wget http://zlib.net/zlib-1.2.11.tar.gz
+tar -zxvf zlib-1.2.11.tar.gz
+## **We can use Nginx to install zlib, so we skip this part:**
+#cd zlib-1.2.11
+#./configure
+#make
+#make install
+#cd /downloads
+
+wget https://www.openssl.org/source/openssl-1.1.0f.tar.gz
+tar xzf openssl-1.1.0f.tar.gz
+## **We can use Nginx to install openssl, so we skip this part:**
+#cd openssl-1.1.0f
+#./config
+#make
+#make install
+
+### **Install Nginx with essential modules. Full description http://nginx.org/en/docs/ :**
+cd /root/downloads/nginx
+./configure --prefix=/var/www \
+            --sbin-path=/usr/sbin/nginx \
+            --modules-path=/usr/lib64/nginx/modules \
+            --conf-path=/var/www/nginx/conf/nginx.conf \
+            --error-log-path=/var/log/nginx/error.log \
+            --pid-path=/var/run/nginx.pid \
+            --lock-path=/var/run/nginx.lock \
+            --user=nobody \
+            --group=nobody \
+            --build=CentOS \
+            --builddir=nginx \
+            --with-select_module \
+            --with-poll_module \
+            --with-threads \
+            --with-file-aio \
+            --with-http_ssl_module \
+            --with-http_v2_module \
+            --with-http_realip_module \
+            --with-http_addition_module \
+            --with-http_xslt_module=dynamic \
+            --with-http_image_filter_module=dynamic \
+            --with-http_geoip_module=dynamic \
+            --with-http_sub_module \
+            --with-http_dav_module \
+            --with-http_flv_module \
+            --with-http_mp4_module \
+            --with-http_gunzip_module \
+            --with-http_gzip_static_module \
+            --with-http_auth_request_module \
+            --with-http_random_index_module \
+            --with-http_secure_link_module \
+            --with-http_degradation_module \
+            --with-http_slice_module \
+            --with-http_stub_status_module \
+            --http-log-path=/var/log/nginx/access.log \
+            --http-client-body-temp-path=/var/cache/nginx/client_temp \
+            --http-proxy-temp-path=/var/cache/nginx/proxy_temp \
+            --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp \
+            --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp \
+            --http-scgi-temp-path=/var/cache/nginx/scgi_temp \
+            --with-mail=dynamic \
+            --with-mail_ssl_module \
+            --with-stream=dynamic \
+            --with-stream_ssl_module \
+            --with-stream_realip_module \
+            --with-stream_geoip_module=dynamic \
+            --with-stream_ssl_preread_module \
+            --with-compat \
+            --with-pcre=../pcre-8.42  \
+            --with-pcre-jit \
+            --with-zlib=../zlib-1.2.11 \
+            --with-openssl=../openssl-1.1.0f \
+            --with-openssl-opt=no-nextprotoneg \
+            --with-debug
+make
+make install
+mkdir -p /var/www/nginx
+
+### **Create symlink for neatness:**
+ln -s /usr/lib64/nginx/modules /var/www/nginx/modules
+
+
+### ** Man Pages:**
+cp /root/downloads/nginx/man/nginx.8 /usr/share/man/man8
+gzip /usr/share/man/man8/nginx.8
+
+### **Clean leftover files:**
+rm -rf /root/downloads
+rm  -rf /var/www/nginx/koi-utf /var/www/nginx/koi-win /var/www/nginx/win-utf
+
+### **Create systemd control unit file:**
+cat <<\EOF > /lib/systemd/system/nginx.service
+[Unit]
+Description=The NGINX HTTP and reverse proxy server
+After=syslog.target network.target remote-fs.target nss-lookup.target
+
+[Service]
+Type=forking
+PIDFile=/var/run/nginx.pid
+ExecStartPre=/usr/sbin/nginx -t
+ExecStart=/usr/sbin/nginx
+ExecReload=/usr/sbin/nginx -s reload
+ExecStop=/bin/kill -s QUIT $MAINPID
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+### **Basic Nginx config file:**
+touch /var/www/nginx/conf/nginx.conf
+cat <<\EOF > /var/www/nginx/conf/nginx.conf
+worker_processes auto;
+
+## **Defined durring compile. You can set up a seperate configuration here.**
+
+#error_log  logs/error.log;
+#error_log  logs/error.log  notice;
+#error_log  logs/error.log  info;
+
+#pid        /var/run/nginx.pid;
+
+
+events {
+    worker_connections  1024;
+}
+
+
+http {
+    server {
+    listen      80 default_server;
+#    server_name ""; Redirect everything
+    rewrite ^.*$ /index.html;
+#    return      444; Return http status code
+    }
+    include       mime.types;
+    default_type  application/octet-stream;
+
+# You can set custom log format for access/error/main.log
+#    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+#                      '$status $body_bytes_sent "$http_referer" '
+#                      '"$http_user_agent" "$http_x_forwarded_for"';
+#    access_log  logs/access.log;
+
+    sendfile        on;
+#   tcp_nopush     on; Do not require tcp connections only
+
+    keepalive_timeout 2;
+    client_max_body_size 100m;
+
+      server_tokens off;
+      gzip  on;
+
+    include /var/www/nginx/conf.d/*.conf;
+}
+#daemon off;
+EOF
+
+### **Website custom conifg file:**
+mkdir -p /var/www/nginx/conf.d
+touch /var/www/nginx/conf.d/domain.conf
+cat <<\EOF > /var/www/nginx/conf.d/domain.conf
+server {
+ listen 80;
+ server_name domain.tld www.domain.tld;
+ root /var/www/html/public_html/domain.tld;
+ index index.php;
+ try_files $uri $uri/ /index.php;
+ location ~* \.php$ {
+ include fastcgi_params;
+ include fastcgi.conf;
+ fastcgi_pass unix:/var/run/php72-fpm.sock;
+
+ }
+}
+EOF
+systemctl restart nginx
+systemctl enable nginx.service
+
+### ** Consider adding  selinux rules instead of disabling it. **
+sed -e 's/SELINUX=enforcing/SELINUX=disabled/g' -i /etc/selinux/config
+#Selinux troubleshooter : yum  install setroubleshoot
+#cat /var/log/audit/audit.log | grep nginx | grep denied | audit2allow -M mynginx
+
+
+
+##################PHP##################
+### **We can use the yum repo for a quick php-fpm setup: **
+yum install yum-utils -y
+yum install http://rpms.remirepo.net/enterprise/remi-release-7.rpm -y
+yum-config-manager --enable remi-php72 -y
+yum update -y
+yum install php72  php72-php-fpm php72-php-gd php72-php-json php72-php-mbstring php72-php-mysqlnd php72-php-xml php72-php-xmlrpc php72-php-opcach -y
+sed -e 's/user = apache/user = nobody/g' -e 's/group = apache/group = nobody/g' -e 's/listen = 127.0.0.1:9000/listen = \/var\/run\/php72-fpm.sock/g' -i  /etc/opt/remi/php72/php-fpm.d/www.conf
+sed -e 's/;listen.owner = nobody/listen.owner = nobody/g' -e 's/;listen.group = nobody/listen.owner = nobody/g' -i /etc/opt/remi/php72/php-fpm.d/www.conf
+
+
+#################MYSQL#####################
+### **Install MariaDB 10.0.3 from yum repos:**
+cat <<\EOF > /etc/yum.repos.d/mariadb.repo
+[mariadb]
+
+baseurl = http://yum.mariadb.org/10.3/rhel7-amd64
+gpgkey=https://yum.mariadb.org/RPM-GPG-KEY-MariaDB
+gpgcheck=1
+EOF
+yum install MariaDB-server MariaDB-client -y
+systemctl start mysql.service
+mysql_secure_installation <<EOF
+
+y
+$secret
+$secret
+y
+y
+y
+y
+EOF
+mysql -u root -p$secret<<-\EOF
+CREATE USER '$domain'@'localhost' IDENTIFIED BY PASSWORD '*$hashedsecret';
+CREATE DATABASE $database_wp;
+GRANT ALL PRIVILEGES ON $database_wp.* TO '$domain'@'localhost' IDENTIFIED BY PASSWORD '*$hashedsecret';
+FLUSH PRIVILEGES;
+EOF
+service mysql restart
+
+
+#####################################WORPDRESS#########################
+cd /downloads
+wget https://wordpress.org/latest.tar.gz
+tar -xvzf latest.tar.gz
+mkdir -p /var/www/html/public_html/domain.tld
+rsync -avz wordpress/* /var/www/html/public_html/domain.tld
+
+sed -e 's/username_here/$domain/g' -e 's/password_here/$secret/g' -e 's/database_name_here/$database_wp/' -i /var/www/html/public_html/domain.tld/wp-config-sample.php
+mv /var/www/html/public_html/$domain.tld/wp-config-sample.php /var/www/html/public_html/$domain.tld/wp-config.php
+
+### ** Uncomment here if a seperate user named "$user" is required (perhaps nginx), otherwise set ownership to nobody **
+chown -R nobody:  /var/www
+
+#useradd -G nobody $user  
+# (consider using setfacl getfacl)
+#echo "$secret" | passwd --stdin $user
+#chown -R $user:  /var/www
+#chown -R $user: /var/www/html/public_html/$domain.tld/*
+#chown -R $user:nobody /var/www/html/public_html/$domain.tld
+
+systemctl enable php72-php-fpm
+
+service php72-php-fpm restart
+echo "<php phpinfo(); ?>" >> /var/www/html/public_html/$domain.tld/i.php
+
+### **Fictional backup server for data, for example sql dump files:**
+wget backup.server.com/$database_wp.sql -O $database_wp.sql
+mysql $database_wp < $database_wp.sql -u root -p$secret
+
+echo "Finished. We need to reboot though, beacuse of the kernel update"
+curl -I -L localhost/i.php
+
+#echo "System will reboot in 5 seconds."
+#sleep 5
+#reboot
+

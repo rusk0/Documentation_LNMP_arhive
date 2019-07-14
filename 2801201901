@@ -1,0 +1,62 @@
+####### Cerboot Let's Encrypt install :
+#Best use sudo user
+sudo yum install certbot-nginx
+#Provice the custom directory for Nginx config files, because default is /etc/nginx
+sudo certbot --nginx --nginx-server-root /var/www/nginx/conf
+#Set crontab for renewal
+crontab -e
+* * */85 * * letsencrypt renew > /var/log/LErenew.log
+#Add HTTP StrictTransport Security in conf.d/domain.conf:  add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+# Add HTTP2 protocol redirect to domain.conf :listen 443 ssl http2; , and TLS1.2 only suppport : ssl_protocols TLSv1.2;
+# The basic config will look like this :
+
+
+server {
+    server_name domain.tld www.domain.tld;
+    root /var/www/html/public_html/domain.tld;
+    index index.php;
+    try_files $uri $uri/ /index.php;
+    listen 443 ssl http2;
+#    return 301 https://$server_name$request_uri;
+    ssl_certificate /etc/letsencrypt/live/domain.tld/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/domain.tld/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    ssl_protocols TLSv1.2;
+
+ 
+#ProxyPass to FastCgi - PHP-FPM
+ location ~* \.php$ {
+ include fastcgi_params;
+ include fastcgi.conf;
+ fastcgi_pass unix:/var/run/php72-fpm.sock;
+ }
+ 
+
+#Redirect static content and set Cross Origin Policies 
+ location ~* ^/wp-content/.*\.(ttf|css|woff|woff2|avi|bin|bmp|dmg|doc|docx|dpkg|exe|flv|gif|htm|html|ico|ics|img|jpeg|jpg|m2a|m2v|mov|mp3|mp4|mpeg|mpg|msi|pdf|pkg|png|ppt|pptx|ps|rar|rss|rtf|swf|tif|tiff|txt|wm$
+ rewrite ^/wp-content/(.*)$ https://static.thefirststack.tk/$1 permanent;
+#location ~* \.(css|woff|woff2|avi|bin|bmp|dmg|doc|docx|dpkg|exe|flv|gif|htm|html|ico|ics|img|jpeg|jpg|m2a|m2v|mov|mp3|mp4|mpeg|mpg|msi|pdf|pkg|png|ppt|pptx|ps|rar|rss|rtf|swf|tif|tiff|txt|wmv|xhtml|xls|xml|zip$
+ resolver 8.8.8.8;
+}
+
+
+# On our static server we need to add several Cross Origin policies :
+ location ~* \.(avi|bin|bmp|dmg|doc|docx|dpkg|exe|flv|gif|htm|ico|ics|img|jpeg|jpg|m2a|m2v|mov|mp3|mp4|mpeg|mpg|msi|pdf|pkg|png|ppt|pptx|ps|rar|rss|rtf|swf|tif|tiff|txt|wmv|xhtml|xls|xml|zip)$ {
+ add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+ add_header 'Access-Control-Allow-Origin' 'https://myfirststack.tk';
+ add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS, HEAD';
+ add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range';
+
+}
+
+# And set a limit for no more than 100 requests/second from the same IP address:
+limit_req_zone $binary_remote_addr zone=100limit:10m rate=100r/s;  (http context)
+#Apply this limit to our Document root with a tollerance of 5 additional requests :
+location ~* \. {
+limit_req zone=100limit burst=5;
+}
+
+# We can add "return 301 https://$domain.tld/index.html;" to the main nginx.conf file, in the http block for https redirection.
+

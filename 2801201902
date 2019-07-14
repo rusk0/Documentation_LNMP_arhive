@@ -1,0 +1,75 @@
+# We need to allow for the browser to load resources from a differnat origin, so we add this to our domain.tld.config file :
+ add_header 'Access-Control-Allow-Origin' '*';
+ add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS';
+ add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range';
+# We can also sepcify the exact origin, but we won't for now
+
+#We must also tell wordpress where to load it's static content from by adding this to our wp-config file :
+define( 'WP_CONTENT_URL', 'https://static.second_domain.tld' );
+
+#Wordpress's staitc content is located in wp-content dir. All we need to do is copy it to static.second_domain.tld where another nginx server
+# will serve the static content from and install LE for our static.second_domain.tld
+
+#We can set the nginx server to only listen for https connections with :
+ listen      443 default_server;
+#in our nginx.conf file , http>>server block
+
+# We can RateLimit the number of conurent requests from the same IP address to 100 , which is the same as limiting the concurrent
+#resources requested from the same IP adress with the following :
+
+limit_conn perip 100;
+#One connection = one requsted resource
+
+#This goes in our server block and is valid in both the main nginx.conf file, or in the static.second_domain.tld.conf file, but since we
+#want to make global limitations it makes more sense to put it in our nginx.conf file.
+
+
+
+# We need to sync changes to our static content to our static server. We can use wordpress for this, but we create a systemd service unit:
+[Unit]
+Description=Simple Daemon For syncing with static server.
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/home/stack
+ExecStart=/home/stack/./send.sh
+Restart=on-failure
+# Other Restart options: or always, on-abort, etc
+
+[Install]
+WantedBy=multi-user.target
+
+
+#Were our send.sh script looks like this :
+#!/bin/bash
+#Simple check for changes made on the static content. If modification is detected - sync the resources.
+
+#First we find all files that are static content:
+STATIC=`find /var/www/html/public_html/domain.tld -type f  -name '*.svg' -o -name '*.eot' -o -name '*.otf' -o -name '*.woff2' -o -name '*.woff' -o -name '*.ttf' -o -name '*.avi' -o -name '*.bin' -o -name '*.bmp' -o -name '*.dmg' -o -name '*.doc' -o -name '*.docx' -o -name '*.dpkg' -o -name '*.exe' -o -name '*.flv' -o -name '*.gif' -o -name '*.htm' -o -name '*.ico' -o -name '*.ics' -o -name '*.img' -o -name '*.jpeg' -o -name '*.jpg' -o -name '*.m2a' -o -name '*.m2v' -o -name '*.mov' -o -name '*.mp3' -o -name '*.mp4' -o -name '*.mpeg' -o -name '*.mpg' -o -name '*.msi' -o -name '*.pdf' -o -name '*.pkg' -o -name '*.png' -o -name '*.ppt' -o -name '*.pptx' -o -name '*.ps' -o -name '*.rar' -o -name '*.rss' -o -name '*.rtf' -o -name '*.swf' -o -name '*.tif' -o -name '*.tiff' -o -name '*.txt' -o -name '*.wmv' -o -name '*.xhtml' -o -name '*.xls' -o -name '*.xml' -o -name '*.zip'`
+
+#Compare the MD5 sum value again and again with a while true loop:
+while true
+do tar -cf - ${STATIC} |md5sum | cut -d" " -f 1 > /home/sum1
+SUM1=`cat /home/sum1`
+sleep 30
+tar -cf - ${STATIC} |md5sum | cut -d" " -f 1 > /home/sum2
+SUM2=`cat /home/sum2`
+
+#Compare the two vales and executes rsync if changes are detecter
+function test()
+{
+if [ $SUM1 != $SUM2 ]
+then
+echo "Something has changed !"
+rsync -avze 'ssh -i /home/stack/.ssh/private.key' ${STATIC}  user@hostname:/var/www/html/public_html/static.domain.tld 2> /var/log/sync.log
+else echo "Nothing has changed"
+fi
+}
+test
+echo ${SUM1}
+echo ${SUM2}
+
+done
+
