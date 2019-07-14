@@ -29,7 +29,7 @@ Lets Encrypt сертификат.
 ## Task 2801201902: ##
 Инсталиране на git server, проект WordPress.
 
-## Конфигурацията е извършена по следния начин :
+**Конфигурацията е извършена по следния начин :**
 [GitWeb](https://github.com/rusk0/Documentation/blob/master/2801201903-easy)
 
 
