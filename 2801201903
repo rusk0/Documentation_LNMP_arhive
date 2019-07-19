@@ -20,7 +20,7 @@ After installing Let's Encrypt our config file for git.$domain.tld should look l
 
 server {
 
-listen 77.77.151.131:80;
+listen $IPADDR:80;
 
 server_name git.$domain.tld;
 
