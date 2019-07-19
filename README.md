@@ -30,7 +30,7 @@ Lets Encrypt сертификат.
 Инсталиране на git server, проект WordPress.
 
 **Конфигурацията е извършена по следния начин :**
-[GitWeb](https://github.com/rusk0/Documentation/blob/master/2801201903-easy)
+[GitWeb](https://github.com/rusk0/Documentation/blob/master/2801201903)
 
 
 ## Task 2801201903: ##
