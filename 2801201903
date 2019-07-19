@@ -4,8 +4,15 @@ yum install git gitweb fcgiwrap -y
 
 cat <</EOF > /var/www/nginx/conf.d/git.mydomain.tld
 server {
-  listen 4321; 
+  listen 0.0.0.0:80 http2;
+  #Change port to 443 after ssl install
   server_name git.mydomain.tld;
+   # ssl_certificate /etc/ssl/self-signed/file.crt;
+   # ssl_certificate_key /etc/ssl/self-signed/file.key;
+   # add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+  #  ssl_protocols TLSv1.2;
+
+
 
   location /gitweb.cgi {
     root /var/www/git;
@@ -21,6 +28,7 @@ server {
     index gitweb.cgi;
   }
 }
+
 EOF
 
 #Assuming this is done :
@@ -65,5 +73,4 @@ EOF
 service nginx restart
 systemctl fcgiwrap enable
 systemctl fcgiwrap start
-netstat -tulpn | grep 4321
-curl -I -L localhost:4321
+curl -I -L localhost:80
